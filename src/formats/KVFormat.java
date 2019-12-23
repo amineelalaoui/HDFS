@@ -19,6 +19,8 @@ public class KVFormat implements Format {
     private transient long index = 0;
     private transient Format.OpenMode mode;
 
+    public KVFormat() {
+    }
 
     public KVFormat(String fname) {
         this.fname = fname;
