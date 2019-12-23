@@ -20,10 +20,10 @@ public class HdfsServer implements Runnable {
     static public String namenodeName;
     static public String path_config = "../config/namenode.properties";
 
-    private Socket clientSocket;
+    static private Socket clientSocket;
 
 
-    public void loadConfig(String path){
+    public static void loadConfig(String path){
         Properties props = new Properties();
 
         try {
@@ -138,11 +138,9 @@ public class HdfsServer implements Runnable {
             ServerSocket server = new ServerSocket(port);
             while(true)
             {
-                System.out.println("attente");
-                client = server.accept();
-                System.out.println("accepted");
-                HdfsServer hdfsServeur = new HdfsServer();
-                hdfsServeur.start();
+                clientSocket = server.accept();
+                HdfsServer hdfsserver = new HdfsServer();
+                new Thread(hdfsserver).start();
             }
 
         } catch (IOException | NotBoundException e) {
