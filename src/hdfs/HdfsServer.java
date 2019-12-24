@@ -50,13 +50,11 @@ public class HdfsServer implements Runnable {
         KV enregistrement = null;
         boolean flag = false;
         try{
-            do{
+            while(inputStream.available()>0){
                 enregistrement = (KV) inputStream.readObject();
-                if(enregistrement==null) flag = false;
-                else flag = true;
-                if (flag) format.write(enregistrement);
+                format.write(enregistrement);
+            }
 
-            }while(flag);
         }catch(ClassNotFoundException e){
             e.printStackTrace();
         }catch(IOException ex){

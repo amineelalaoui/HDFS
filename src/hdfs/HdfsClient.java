@@ -96,10 +96,11 @@ public class HdfsClient {
           System.out.println("Client Ecrit");
 
           loadConfig(config_path);
-
+          System.out.println("rmi access : " + nameNodeIP + ":" + nameNodePORT);
           Registry registry = LocateRegistry.getRegistry(nameNodeIP, nameNodePORT);
           NameNode nameNode = (NameNode) registry.lookup(nameNodeN);
           List<DataNode> dataNodeList = nameNode.listeDataNodes();
+          System.out.println(dataNodeList.get(0).getIp() + ":" + dataNodeList.get(0).getPort()+":" + dataNodeList.get(0).getName());
 
           File file = new File(localFSSourceFname);
           FileReader fileReader = new FileReader(file);
@@ -145,7 +146,6 @@ public class HdfsClient {
                   String ip =  dataNodeList.get(suivant).getIp();
                   int port = dataNodeList.get(suivant).getPort();
                   System.out.println(ip + ":" + port);
-                  System.out.println(ip+ ":" +port);
                   Socket socket = new Socket(ip,port);
                   socketListClient.add(socket);
                   objectOutputStreamList.add(new ObjectOutputStream(socketListClient.get(k).getOutputStream()));

@@ -3,7 +3,6 @@ package hdfs;
 import formats.Format;
 import formats.KV;
 import formats.LineFormat;
-import jdk.internal.util.xml.impl.Input;
 
 import java.io.*;
 import java.rmi.Naming;
@@ -78,8 +77,8 @@ public class NodeNameImpl extends UnicastRemoteObject implements NameNode{
         KV kv = lineformat.read();
     // information du fichier
         String[] informations = kv.v.split(":");
-        System.out.println(kv.v.toString());
         metaData.setNomFich(informations[0]);
+        System.out.println(informations[0]);
         metaData.setTaille(Integer.parseInt(informations[1]));
         metaData.setFormat(Format.Type.valueOf(informations[2]));
 
