@@ -18,7 +18,7 @@ import java.util.Properties;
 import java.util.*;
 
 public class HdfsClient {
-    static public String config_path = "../config/namenode.properties";
+    static public String config_path = "D:/enseeiht/HDFS_FINAL/src/config/namenode.properties";
      static public String nameNodeN ;
     static public String nameNodeIP ;
     static public int nameNodePORT ;
@@ -134,19 +134,22 @@ public class HdfsClient {
               Commande commande = new Commande(Commande.Id.Commande_WRITE,localFSSourceFname+i,fmt);
 
               //envoie maint par les sockets
-              List<Socket> socketListClient = new ArrayList<Socket>();
+              List<Socket> socketListClient = new ArrayList<>();
               //Creation des outputstreams pour l'envoi
 
               List<ObjectOutputStream> objectOutputStreamList = new
-                      ArrayList<ObjectOutputStream>();
+                      ArrayList<>();
               for(int k = 0 ; k< repFactor ; k++){
 
                   int suivant = (i+k)%dataNodeList.size();
                   String ip =  dataNodeList.get(suivant).getIp();
                   int port = dataNodeList.get(suivant).getPort();
+                  System.out.println(ip + ":" + port);
+                  System.out.println(ip+ ":" +port);
                   Socket socket = new Socket(ip,port);
                   socketListClient.add(socket);
                   objectOutputStreamList.add(new ObjectOutputStream(socketListClient.get(k).getOutputStream()));
+                  System.out.println(commande.getCmd() + ":" + commande.getNomChunk() + ":" + commande.getformat());
                   objectOutputStreamList.get(k).writeObject(commande);
               }
 
@@ -200,7 +203,7 @@ public class HdfsClient {
             Registry registry = LocateRegistry.getRegistry(nameNodeIP,nameNodePORT);
 
             NameNode nameNode = (NameNode) registry.lookup(nameNodeN);
-
+            System.out.println(hdfsFname);
             MetaDataFichier metaDataFichier = nameNode.GetMetadataFile(hdfsFname);
 
 

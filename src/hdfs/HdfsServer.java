@@ -18,7 +18,7 @@ public class HdfsServer implements Runnable {
     static public String nameNodeIp;
     static int nameNodePort;
     static public String namenodeName;
-    static public String path_config = "../config/namenode.properties";
+    static public String path_config = "D:/enseeiht/HDFS_FINAL/src/config/namenode.properties";
 
     static private Socket clientSocket;
 
@@ -132,6 +132,7 @@ public class HdfsServer implements Runnable {
             loadConfig(path_config);
             DataNode dataNodeInfo= new DataNode(ip,port);
             Registry registry = LocateRegistry.getRegistry(nameNodeIp,nameNodePort);
+            System.out.println(nameNodeIp + ":" + nameNodePort);
             NameNode nameNode = (NameNode) registry.lookup(namenodeName);
             nameNode.addDataNode(dataNodeInfo);
 

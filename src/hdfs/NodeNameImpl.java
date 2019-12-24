@@ -28,7 +28,7 @@ public class NodeNameImpl extends UnicastRemoteObject implements NameNode{
 
     private String metaDataPath = "../data/";
 
-    static public String config_path = "..\\config\\namenode.properties";
+    static public String config_path = "D:/enseeiht/HDFS_FINAL/src/config/namenode.properties";
 //    static public String config_path = "../config/namenode.properties";
 
     protected NodeNameImpl() throws RemoteException {
@@ -49,7 +49,7 @@ public class NodeNameImpl extends UnicastRemoteObject implements NameNode{
 
             NameNode nameNode = new NodeNameImpl();
             LocateRegistry.createRegistry(port);
-            Naming.rebind("//localhost:"+port+"/nameNodeDaemon",nameNode);
+            Naming.rebind("rmi://localhost:"+port+"/nameNodeDaemon",nameNode);
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -65,8 +65,9 @@ public class NodeNameImpl extends UnicastRemoteObject implements NameNode{
         // TODO : add Format first
 
         // Creation de type Format ... et le Metadata
-
+        System.out.println("test");
         Format lineformat = new LineFormat(nomFich) ;
+
         lineformat.open(Format.OpenMode.R);
 
         MetaDataFichier metaData = new MetaDataFichier();
@@ -77,6 +78,7 @@ public class NodeNameImpl extends UnicastRemoteObject implements NameNode{
         KV kv = lineformat.read();
     // information du fichier
         String[] informations = kv.v.split(":");
+        System.out.println(kv.v.toString());
         metaData.setNomFich(informations[0]);
         metaData.setTaille(Integer.parseInt(informations[1]));
         metaData.setFormat(Format.Type.valueOf(informations[2]));
