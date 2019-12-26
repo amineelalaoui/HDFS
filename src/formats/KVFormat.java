@@ -79,6 +79,7 @@ public class KVFormat implements Format {
     public void write(KV record) {
         try {
             String s = record.k+KV.SEPARATOR+record.v;
+            System.out.println("writing " + s );
             bw.write(s, 0, s.length());
             bw.newLine();
             bw.flush();

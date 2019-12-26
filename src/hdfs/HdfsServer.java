@@ -48,19 +48,20 @@ public class HdfsServer implements Runnable {
         format.setFname(cmd.getNomChunk());
         format.open(Format.OpenMode.W);
         KV enregistrement = null;
-        boolean flag = false;
         try{
-            while(inputStream.available()>0){
-                enregistrement = (KV) inputStream.readObject();
+            System.out.println("attempt");
+            while(( enregistrement = (KV) inputStream.readObject())!=null){
+                System.out.println("attempt x");
                 format.write(enregistrement);
             }
-
         }catch(ClassNotFoundException e){
             e.printStackTrace();
         }catch(IOException ex){
             ex.printStackTrace();
         }
-        format.close();
+        finally {
+            format.close();
+        }
     }
 
     private void readHDFS(Commande cmd, ObjectOutputStream outputStream) {
@@ -129,10 +130,14 @@ public class HdfsServer implements Runnable {
             //register datanode
             loadConfig(path_config);
             DataNode dataNodeInfo= new DataNode(ip,port);
+            DataNode dataNodeInfo2 = new DataNode(ip,port);
+            DataNode dataNodeInfo3 = new DataNode(ip,port);
             Registry registry = LocateRegistry.getRegistry(nameNodeIp,nameNodePort);
             System.out.println(nameNodeIp + ":" + nameNodePort);
             NameNode nameNode = (NameNode) registry.lookup(namenodeName);
             nameNode.addDataNode(dataNodeInfo);
+            nameNode.addDataNode(dataNodeInfo2);
+            nameNode.addDataNode(dataNodeInfo3);
 
             ServerSocket server = new ServerSocket(port);
             while(true)

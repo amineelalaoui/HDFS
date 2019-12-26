@@ -19,10 +19,10 @@ import java.util.*;
 
 public class HdfsClient {
     static public String config_path = "D:/enseeiht/HDFS_FINAL/src/config/namenode.properties";
-     static public String nameNodeN ;
+    static public String nameNodeN ;
     static public String nameNodeIP ;
     static public int nameNodePORT ;
-
+    private static boolean debug = true;
 
     private static void usage() {
         System.out.println("Usage: java HdfsClient read <file>");
@@ -100,6 +100,7 @@ public class HdfsClient {
           Registry registry = LocateRegistry.getRegistry(nameNodeIP, nameNodePORT);
           NameNode nameNode = (NameNode) registry.lookup(nameNodeN);
           List<DataNode> dataNodeList = nameNode.listeDataNodes();
+          System.out.println("Datanode list size : " + dataNodeList.size());
           System.out.println(dataNodeList.get(0).getIp() + ":" + dataNodeList.get(0).getPort()+":" + dataNodeList.get(0).getName());
 
           File file = new File(localFSSourceFname);
@@ -120,18 +121,23 @@ public class HdfsClient {
           {
               case KV:
                    format = new KVFormat(file.getName());
+                  System.out.println("KV Format");
                   break;
               case LINE:
                    format = new LineFormat();
+                  System.out.println("Line Format");
                    break;
           }
           format.setFname(localFSSourceFname);
           format.open(Format.OpenMode.R);
 
-
+        if(debug)
+            System.out.println("Attempting to send data to the server");
 
           for (int i = 0 ; i < dataNodeList.size() ;i++ ){
               //Ici la commande de l'ecriture
+              if(debug)
+                  System.out.println("creating the command");
               Commande commande = new Commande(Commande.Id.Commande_WRITE,localFSSourceFname+i,fmt);
 
               //envoie maint par les sockets
@@ -141,29 +147,40 @@ public class HdfsClient {
               List<ObjectOutputStream> objectOutputStreamList = new
                       ArrayList<>();
               for(int k = 0 ; k< repFactor ; k++){
-
+                    if(debug)
+                        System.out.println("get the ip:port from the datanode");
                   int suivant = (i+k)%dataNodeList.size();
                   String ip =  dataNodeList.get(suivant).getIp();
                   int port = dataNodeList.get(suivant).getPort();
                   System.out.println(ip + ":" + port);
+                  if(debug)
+                      System.out.println("create the socket and adding it to the socket list");
                   Socket socket = new Socket(ip,port);
                   socketListClient.add(socket);
+                  if(debug)
+                        System.out.println("getting the object output stream via the  socket");
                   objectOutputStreamList.add(new ObjectOutputStream(socketListClient.get(k).getOutputStream()));
                   System.out.println(commande.getCmd() + ":" + commande.getNomChunk() + ":" + commande.getformat());
+                  if(debug)
+                      System.out.println("send the object to the server");
                   objectOutputStreamList.get(k).writeObject(commande);
               }
-
+                if(debug)
+                    System.out.println("attempt to send data to the server via the server socket. Line numbers mod size of dataNodeList : " + nombreLigne%dataNodeList.size());
               for(int k = 0 ; k < nombreLigne%dataNodeList.size() ; k++){
                   KV kv = format.read();
-
-                  for(int j = 0 ; j < repFactor ; j++)
+                  if(kv == null) break;
+                  for(int j = 0 ; j < repFactor ; j++) {
+                      System.out.println(kv.toString());
                       objectOutputStreamList.get(j).writeObject(kv);
+                  }
               }
 
               // le reste à ajouter TODO
 
               //finalisation et ajout de metadatachunk et le dupliquer
-
+                if(debug)
+                    System.out.println("creating chunks and closing connection");
               Chunks chunk = new Chunks(localFSSourceFname+i,nombreLigne%dataNodeList.size()+i,repFactor);
               for(int k = 0 ; k < repFactor ; k++){
                   int suivant = (i+k)%dataNodeList.size();

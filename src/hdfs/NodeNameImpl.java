@@ -64,7 +64,7 @@ public class NodeNameImpl extends UnicastRemoteObject implements NameNode{
         // TODO : add Format first
 
         // Creation de type Format ... et le Metadata
-        System.out.println("test");
+        System.out.println(nomFich);
         Format lineformat = new LineFormat(nomFich) ;
 
         lineformat.open(Format.OpenMode.R);
