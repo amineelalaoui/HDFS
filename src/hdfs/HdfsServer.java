@@ -11,7 +11,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.Properties;
 
-public class HdfsServer implements Runnable {
+public class HdfsServer extends Thread {
 
     static public String ip;
     static public int port;
@@ -50,10 +50,11 @@ public class HdfsServer implements Runnable {
         KV enregistrement = null;
         try{
             System.out.println("attempt");
-            while(( enregistrement = (KV) inputStream.readObject())!=null){
-                System.out.println("attempt x");
-                format.write(enregistrement);
-            }
+                if(( enregistrement = (KV) inputStream.readObject())!=null) {
+                    System.out.println("attempt x");
+                    format.write(enregistrement);
+                }
+
         }catch(ClassNotFoundException e){
             e.printStackTrace();
         }catch(IOException ex){
@@ -114,6 +115,7 @@ public class HdfsServer implements Runnable {
 
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
+            System.exit(0);
         }
     }
 
@@ -144,7 +146,8 @@ public class HdfsServer implements Runnable {
             {
                 clientSocket = server.accept();
                 HdfsServer hdfsserver = new HdfsServer();
-                new Thread(hdfsserver).start();
+                //new Thread(hdfsserver).start();
+                hdfsserver.start();
             }
 
         } catch (IOException | NotBoundException e) {

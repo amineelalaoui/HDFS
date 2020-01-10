@@ -1,5 +1,3 @@
-/* une PROPOSITION de squelette, incomplète et adaptable... */
-
 package hdfs;
 import formats.Format;
 import formats.KV;
@@ -87,127 +85,149 @@ public class HdfsClient {
             e.printStackTrace();
         }
     }
-	
-    public static void HdfsWrite(Format.Type fmt, String localFSSourceFname, 
-     int repFactor)  {
+
+    public static void HdfsWrite(Format.Type fmt, String localFSSourceFname,
+                                 int repFactor)  {
 
         //Writing Client
-      try {
-          System.out.println("Client Ecrit");
+        try {
+            System.out.println("Client Ecrit");
 
-          loadConfig(config_path);
-          System.out.println("rmi access : " + nameNodeIP + ":" + nameNodePORT);
-          Registry registry = LocateRegistry.getRegistry(nameNodeIP, nameNodePORT);
-          NameNode nameNode = (NameNode) registry.lookup(nameNodeN);
-          List<DataNode> dataNodeList = nameNode.listeDataNodes();
-          System.out.println("Datanode list size : " + dataNodeList.size());
-          System.out.println(dataNodeList.get(0).getIp() + ":" + dataNodeList.get(0).getPort()+":" + dataNodeList.get(0).getName());
+            loadConfig(config_path);
+            System.out.println("rmi access : " + nameNodeIP + ":" + nameNodePORT);
+            Registry registry = LocateRegistry.getRegistry(nameNodeIP, nameNodePORT);
+            NameNode nameNode = (NameNode) registry.lookup(nameNodeN);
+            List<DataNode> dataNodeList = nameNode.listeDataNodes();
+            System.out.println("Datanode list size : " + dataNodeList.size());
+            System.out.println(dataNodeList.get(0).getIp() + ":" + dataNodeList.get(0).getPort()+":" + dataNodeList.get(0).getName());
 
-          File file = new File(localFSSourceFname);
-          FileReader fileReader = new FileReader(file);
-          BufferedReader bufferedReader = new BufferedReader(fileReader);
-          //pour calculer le nombre de ligne
-          int nombreLigne = 0 ;
-          while (bufferedReader.readLine() != null) nombreLigne++;
-          /// On cree le metadatafile
+            File file = new File(localFSSourceFname);
+            FileReader fileReader = new FileReader(file);
+            BufferedReader bufferedReader = new BufferedReader(fileReader);
+            //pour calculer le nombre de ligne
+            int nombreLigne = 0 ;
+            while (bufferedReader.readLine() != null) nombreLigne++;
+            int chunk_nb_lines = nombreLigne/dataNodeList.size();
+            int reste = nombreLigne%dataNodeList.size();
+            System.out.println("nombre de ligne = " + nombreLigne);
+            bufferedReader = new BufferedReader(new FileReader(file));
 
-          MetaDataFichier metaDataFichier = new MetaDataFichier(localFSSourceFname,file.length(),fmt);
-          List<Chunks> chunksList = new ArrayList<Chunks>();
+            Format format = null ;
+            switch(fmt)
+            {
+                case KV:
+                    format = new KVFormat(file.getName());
+                    System.out.println("KV Format");
+                    break;
+                case LINE:
+                    format = new LineFormat();
+                    System.out.println("Line Format");
+                    break;
+            }
+            format.setFname(localFSSourceFname);
+            format.open(Format.OpenMode.R);
+            /// On cree le metadatafile
 
-          System.out.println(" Fichier existe ? : "+file.exists()+" "+localFSSourceFname+" "+file.length());
-          System.out.println(dataNodeList.size()+" "+nombreLigne/dataNodeList.size()+ " " +nombreLigne%dataNodeList.size()+" " + nombreLigne);
-          Format format = null ;
-          switch(fmt)
-          {
-              case KV:
-                   format = new KVFormat(file.getName());
-                  System.out.println("KV Format");
-                  break;
-              case LINE:
-                   format = new LineFormat();
-                  System.out.println("Line Format");
-                   break;
-          }
-          format.setFname(localFSSourceFname);
-          format.open(Format.OpenMode.R);
+            MetaDataFichier metaDataFichier = new MetaDataFichier(localFSSourceFname,file.length(),fmt);
+            List<Chunks> chunksList = new ArrayList<Chunks>();
 
-        if(debug)
-            System.out.println("Attempting to send data to the server");
+            System.out.println(" Fichier existe ? : "+file.exists()+" "+localFSSourceFname+" "+file.length());
+            System.out.println(dataNodeList.size()+" "+nombreLigne/dataNodeList.size()+ " " +nombreLigne%dataNodeList.size()+" " + nombreLigne);
 
-          for (int i = 0 ; i < dataNodeList.size() ;i++ ){
-              //Ici la commande de l'ecriture
-              if(debug)
-                  System.out.println("creating the command");
-              Commande commande = new Commande(Commande.Id.Commande_WRITE,localFSSourceFname+i,fmt);
 
-              //envoie maint par les sockets
-              List<Socket> socketListClient = new ArrayList<>();
-              //Creation des outputstreams pour l'envoi
+            if(debug)
+                System.out.println("Attempting to send data to the server");
 
-              List<ObjectOutputStream> objectOutputStreamList = new
-                      ArrayList<>();
-              for(int k = 0 ; k< repFactor ; k++){
+            for (int i = 0 ; i < dataNodeList.size() ;i++ ){
+                //Ici la commande de l'ecriture
+                if(debug)
+                    System.out.println("creating the command");
+                Commande commande = new Commande(Commande.Id.Commande_WRITE,localFSSourceFname+i,fmt);
+
+                //envoie maint par les sockets
+                List<Socket> socketListClient = new ArrayList<>();
+                //Creation des outputstreams pour l'envoi
+
+                List<ObjectOutputStream> objectOutputStreamList = new
+                        ArrayList<ObjectOutputStream>();
+                for(int k = 0 ; k< repFactor ; k++){
                     if(debug)
                         System.out.println("get the ip:port from the datanode");
-                  int suivant = (i+k)%dataNodeList.size();
-                  String ip =  dataNodeList.get(suivant).getIp();
-                  int port = dataNodeList.get(suivant).getPort();
-                  System.out.println(ip + ":" + port);
-                  if(debug)
-                      System.out.println("create the socket and adding it to the socket list");
-                  Socket socket = new Socket(ip,port);
-                  socketListClient.add(socket);
-                  if(debug)
+                    int suivant = (i+k)%dataNodeList.size();
+                    String ip =  dataNodeList.get(suivant).getIp();
+                    int port = dataNodeList.get(suivant).getPort();
+                    System.out.println(ip + ":" + port);
+                    if(debug)
+                        System.out.println("create the socket and adding it to the socket list");
+                    Socket socket = new Socket(ip,port);
+                    socketListClient.add(socket);
+                    if(debug)
                         System.out.println("getting the object output stream via the  socket");
-                  objectOutputStreamList.add(new ObjectOutputStream(socketListClient.get(k).getOutputStream()));
-                  System.out.println(commande.getCmd() + ":" + commande.getNomChunk() + ":" + commande.getformat());
-                  if(debug)
-                      System.out.println("send the object to the server");
-                  objectOutputStreamList.get(k).writeObject(commande);
-              }
+                    objectOutputStreamList.add(new ObjectOutputStream(socketListClient.get(k).getOutputStream()));
+                    System.out.println(commande.getCmd() + ":" + commande.getNomChunk() + ":" + commande.getformat());
+                    if(debug)
+                        System.out.println("send the object to the server");
+                    objectOutputStreamList.get(k).writeObject(commande);
+                }
                 if(debug)
-                    System.out.println("attempt to send data to the server via the server socket. Line numbers mod size of dataNodeList : " + nombreLigne%dataNodeList.size());
-              for(int k = 0 ; k < nombreLigne%dataNodeList.size() ; k++){
-                  KV kv = format.read();
-                  if(kv == null) break;
-                  for(int j = 0 ; j < repFactor ; j++) {
-                      System.out.println(kv.toString());
-                      objectOutputStreamList.get(j).writeObject(kv);
-                  }
-              }
+                    System.out.println("attempt to send data to the server via the server socket. Line numbers mod size of dataNodeList : " + chunk_nb_lines);
+                for(int k = 0 ; k < chunk_nb_lines; k++){
+                    KV kv = format.read();
+                    System.out.println(kv.toString());
+                    for(int j = 0 ; j < repFactor ; j++) {
+                        objectOutputStreamList.get(j).writeObject(kv);
+                    }
+                    System.out.println();
+                }
 
-              // le reste à ajouter TODO
+                int k = 0;
+                if(reste!=0) {
+                    k++;
+                    KV enregistrement =format.read();
+                    for(int r = 0; r<repFactor ; r++) {
+                        objectOutputStreamList.get(r).writeObject(enregistrement);
+                    }
+                    reste--;
+                }
 
-              //finalisation et ajout de metadatachunk et le dupliquer
+
+
+                //finalisation et ajout de metadatachunk et le dupliquer
                 if(debug)
                     System.out.println("creating chunks and closing connection");
-              Chunks chunk = new Chunks(localFSSourceFname+i,nombreLigne%dataNodeList.size()+i,repFactor);
-              for(int k = 0 ; k < repFactor ; k++){
-                  int suivant = (i+k)%dataNodeList.size();
-                  DataNode dataNode = dataNodeList.get(suivant);
-                  chunk.addDatanode(dataNode);
-                  objectOutputStreamList.get(k).close();
-                  socketListClient.get(k).close();
+                Chunks chunk = new Chunks(localFSSourceFname+i,chunk_nb_lines+k,repFactor);
+                for(k = 0 ; k < repFactor ; k++){
+                    objectOutputStreamList.get(k).writeObject(null);
+                    int suivant = (i+k)%dataNodeList.size();
+                    DataNode dataNode = dataNodeList.get(suivant);
+                    chunk.addDatanode(dataNode);
+                    objectOutputStreamList.get(k).close();
+                    socketListClient.get(k).close();
+                }
 
-              }
 
+                chunksList.add(chunk);
 
-              chunksList.add(chunk);
+            }
 
-          }
+            format.close();
 
-          metaDataFichier.setChunks(chunksList);
-          nameNode.addMetaDataFichier(metaDataFichier);
-          format.close();
-      } catch (RemoteException e) {
-          e.printStackTrace();
-      } catch (NotBoundException e) {
-          e.printStackTrace();
-      } catch (FileNotFoundException e) {
-          e.printStackTrace();
-      } catch (IOException e) {
-          e.printStackTrace();
-      }
+            metaDataFichier.setChunks(chunksList);
+            nameNode.addMetaDataFichier(metaDataFichier);
+            ;
+        } catch (RemoteException e) {
+            e.printStackTrace();
+            System.exit(0);
+        } catch (NotBoundException e) {
+            e.printStackTrace();
+            System.exit(0);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            System.exit(0);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.exit(0);
+        }
 
 
     }
@@ -270,7 +290,7 @@ public class HdfsClient {
 
     }
 
-	
+
     public static void main(String[] args) {
         // java HdfsClient <read|write> <line|kv> <file>
 
@@ -278,16 +298,16 @@ public class HdfsClient {
             if (args.length<2) {usage(); return;}
 
             switch (args[0]) {
-              case "read": HdfsRead(args[1],null); break;
-              case "delete": HdfsDelete(args[1]); break;
-              case "write": 
-                Format.Type fmt;
-                if (args.length<3) {usage(); return;}
-                if (args[1].equals("line")) fmt = Format.Type.LINE;
-                else if(args[1].equals("kv")) fmt = Format.Type.KV;
-                else {usage(); return;}
-                HdfsWrite(fmt,args[2],1);
-            }	
+                case "read": HdfsRead(args[1],null); break;
+                case "delete": HdfsDelete(args[1]); break;
+                case "write":
+                    Format.Type fmt;
+                    if (args.length<3) {usage(); return;}
+                    if (args[1].equals("line")) fmt = Format.Type.LINE;
+                    else if(args[1].equals("kv")) fmt = Format.Type.KV;
+                    else {usage(); return;}
+                    HdfsWrite(fmt,args[2],1);
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
         }

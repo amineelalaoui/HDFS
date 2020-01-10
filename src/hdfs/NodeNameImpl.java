@@ -39,7 +39,7 @@ public class NodeNameImpl extends UnicastRemoteObject implements NameNode{
     public static void main(String args[]){
 
        Properties properties = new Properties();
-        InputStream inputStream ;
+        InputStream inputStream = null ;
         try{
             inputStream = new FileInputStream(config_path);
             properties.load(inputStream);

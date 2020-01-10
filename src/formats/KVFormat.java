@@ -33,6 +33,7 @@ public class KVFormat implements Format {
             switch (mode) {
             case R:
                 br = new BufferedReader(new InputStreamReader(new FileInputStream(fname)));
+                System.out.println("reading the KV file");
                 break;
             case W:
                 bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fname)));
@@ -61,11 +62,16 @@ public class KVFormat implements Format {
     public KV read() {
         try {
             while (true) {
+                System.out.println("*************** reading from " + fname + "***************");
                 String l = br.readLine();
-                if (l == null) return null;
+                if (l == null) {
+                    System.out.println("returning null");
+                    return null;
+                }
                 index += l.length();
                 String[] tokens = l.split(KV.SEPARATOR);
                 if (tokens.length != 2) continue;
+                System.out.println("value readed : " + l);
                 kv.k = tokens[0];
                 kv.v = tokens[1];
                 return kv;
